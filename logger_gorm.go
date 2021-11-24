@@ -11,14 +11,14 @@ import (
 	"gorm.io/gorm/utils"
 )
 
-type gormlogger struct {
+type Gorm struct {
 	*SugaredLogger
 	logger.Config
 	infoStr, warnStr, errStr            string
 	traceStr, traceErrStr, traceWarnStr string
 }
 
-func NewGormLogger(writer *Logger, config logger.Config) logger.Interface {
+func NewGorm(writer *Logger, config logger.Config) *Gorm {
 	var (
 		infoStr      = "%s\n "
 		warnStr      = "%s\n "
@@ -37,7 +37,7 @@ func NewGormLogger(writer *Logger, config logger.Config) logger.Interface {
 		traceErrStr = logger.RedBold + "%s " + logger.MagentaBold + "%s\n" + logger.Reset + logger.Yellow + "[%.3fms] " + logger.BlueBold + "[rows:%v]" + logger.Reset + " %s"
 	}
 
-	return &gormlogger{
+	return &Gorm{
 		SugaredLogger: writer.WithOptions(AddCallerSkip(1)).Sugar(),
 		Config:        config,
 		infoStr:       infoStr,
@@ -49,22 +49,15 @@ func NewGormLogger(writer *Logger, config logger.Config) logger.Interface {
 	}
 }
 
-var DefaultGormConfig = logger.Config{
-	SlowThreshold:             200 * time.Millisecond,
-	LogLevel:                  logger.Warn,
-	IgnoreRecordNotFoundError: false,
-	Colorful:                  false,
-}
-
 // LogMode log mode
-func (l *gormlogger) LogMode(level logger.LogLevel) logger.Interface {
+func (l *Gorm) LogMode(level logger.LogLevel) logger.Interface {
 	newLogger := *l
 	newLogger.LogLevel = level
 	return &newLogger
 }
 
 // Info print info
-func (l gormlogger) Info(ctx context.Context, msg string, data ...interface{}) {
+func (l Gorm) Info(ctx context.Context, msg string, data ...interface{}) {
 	if l.LogLevel >= logger.Info {
 		l.SugaredLogger.Infof(l.infoStr+msg, append([]interface{}{utils.FileWithLineNum()}, data...)...)
 		// l.Printf(l.infoStr+msg, append([]interface{}{utils.FileWithLineNum()}, data...)...)
@@ -72,7 +65,7 @@ func (l gormlogger) Info(ctx context.Context, msg string, data ...interface{}) {
 }
 
 // Warn print warn messages
-func (l gormlogger) Warn(ctx context.Context, msg string, data ...interface{}) {
+func (l Gorm) Warn(ctx context.Context, msg string, data ...interface{}) {
 	if l.LogLevel >= logger.Warn {
 		l.SugaredLogger.Warnf(l.warnStr+msg, append([]interface{}{utils.FileWithLineNum()}, data...)...)
 		// l.Printf(l.warnStr+msg, append([]interface{}{utils.FileWithLineNum()}, data...)...)
@@ -80,7 +73,7 @@ func (l gormlogger) Warn(ctx context.Context, msg string, data ...interface{}) {
 }
 
 // Error print error messages
-func (l gormlogger) Error(ctx context.Context, msg string, data ...interface{}) {
+func (l Gorm) Error(ctx context.Context, msg string, data ...interface{}) {
 	if l.LogLevel >= logger.Error {
 		l.SugaredLogger.Errorf(l.errStr+msg, append([]interface{}{utils.FileWithLineNum()}, data...)...)
 		// l.Printf(l.errStr+msg, append([]interface{}{utils.FileWithLineNum()}, data...)...)
@@ -88,7 +81,7 @@ func (l gormlogger) Error(ctx context.Context, msg string, data ...interface{}) 
 }
 
 // Trace print sql message
-func (l gormlogger) Trace(ctx context.Context, begin time.Time, fc func() (string, int64), err error) {
+func (l Gorm) Trace(ctx context.Context, begin time.Time, fc func() (string, int64), err error) {
 	if l.LogLevel <= logger.Silent {
 		return
 	}
